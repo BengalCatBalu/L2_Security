@@ -1,12 +1,86 @@
 # Rollup (Layer 2) Architect Security Checklist
 
 ## 1. State Validation & Proofs
+
 - [ ] Is the state posted to L1 always valid and verifiable?
 - [ ] Can invalid states be challenged and reverted efficiently?
 - [ ] Are Fraud/Validity proofs robust and cover all fraud scenarios?
 - [ ] Are anchor roots based on recent enough L2 blocks (e.g., no older than 6 months L1 timestamp)?
 - [ ] Are anchor roots only accepted from dispute games created within the correct registry context?
 - [ ] Are all input invariants (timestamps, chainId ordering, block numbers, gas limits) explicitly validated?
+
+```solidity
+// Is the state posted to L1 always valid and verifiable?
+// Example: Publishing L2 state root to L1
+contract L1StatePublisher {
+    event StatePublished(bytes32 indexed outputRoot, uint256 l2Block, uint256 timestamp);
+
+    function publishState(bytes32 outputRoot, uint256 l2Block) external {
+        emit StatePublished(outputRoot, l2Block, block.timestamp);
+    }
+}
+
+// Can invalid states be challenged and reverted efficiently?
+// Example: Dispute resolution mechanism
+contract DisputeGame {
+    address public challenger;
+    bytes32 public disputedState;
+
+    function challenge(bytes32 _disputedState) external {
+        disputedState = _disputedState;
+        challenger = msg.sender;
+    }
+
+    function resolveChallenge(bool fraudDetected) external {
+        require(msg.sender == address(0xValidator));
+        if (fraudDetected) {
+            emit StateReverted(disputedState);
+        }
+    }
+
+    event StateReverted(bytes32 invalidRoot);
+}
+
+// Are Fraud/Validity proofs robust and cover all fraud scenarios?
+// Example: ZK proof verification
+contract ZKVerifier {
+    function verifyProof(
+        uint256[8] calldata proof,
+        uint256[1] calldata publicSignals
+    ) external pure returns (bool) {
+        return Groth16.verify(proof, publicSignals);
+    }
+}
+
+// Are anchor roots based on recent enough L2 blocks (e.g., no older than 6 months L1 timestamp)?
+// Example: Recency check for anchor roots
+function isFreshAnchor(uint256 l1Timestamp, uint256 anchorTimestamp) public pure returns (bool) {
+    return l1Timestamp - anchorTimestamp <= 180 days;
+}
+
+// Are anchor roots only accepted from dispute games created within the correct registry context?
+// Example: Registry-based validation of anchor roots
+mapping(address => bool) public isValidRegistry;
+
+function acceptAnchor(address registry, bytes32 anchor) external {
+    require(isValidRegistry[registry], "Invalid registry source");
+}
+
+// Are all input invariants (timestamps, chainId ordering, block numbers, gas limits) explicitly validated?
+// Example: Input invariant checks
+function validateInputs(
+    uint256 timestamp,
+    uint256 blockNumber,
+    uint256 chainId,
+    uint256 gasLimit
+) public pure {
+    require(timestamp > 0, "Invalid timestamp");
+    require(blockNumber > 0, "Invalid block number");
+    require(chainId == 1 || chainId == 10, "Unsupported chainId");
+    require(gasLimit <= 30_000_000, "Gas limit too high");
+}
+```
+
 
 ## 2. Data Availability
 - [ ] Are transaction data available independently from the sequencer?
