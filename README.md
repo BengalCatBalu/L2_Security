@@ -22,7 +22,7 @@ Each checklist item is accompanied by **code samples** to illustrate how a given
   These are intentionally simplified Solidity examples designed to demonstrate **what to verify in the protocol design or audit**.  
   They help link theoretical security concerns with practical implementation details.
 
-- ✅ For **DApp Developer Checklist**, code fragments are based on **real protocols** and include **excerpts from deployed contracts**, as well as **proof-of-concept examples** for known issues or misimplementations.
+- ✅ For **DApp Developer Checklist**, code fragments are based on **real protocols**
 
 The goal is to make each checklist item **actionable and verifiable** — not just a list of concerns, but a tool for direct application in engineering and audit workflows.
 
